@@ -1,0 +1,55 @@
+apiVersion: metering.openshift.io/v1
+kind: ReportQuery
+metadata:
+  name: rise-pod-gpu-request
+  namespace: metering
+spec:
+  columns:
+  - name: period_start
+    type: timestamp
+    unit: date
+  - name: period_end
+    type: timestamp
+    unit: date
+  - name: pod
+    type: varchar
+    unit: kubernetes_pod
+  - name: node
+    type: varchar
+    unit: kubernetes_node
+  - name: namespace
+    type: varchar
+    unit: kubernetes_namespace
+  - name: projectid
+    type: varchar
+  - name: gpu
+    type: varchar
+  - name: pod_request_gpu_seconds
+    type: double
+  inputs:
+  - name: ReportingStart
+    type: time
+  - name: ReportingEnd
+    type: time
+  - default: rise-pod-gpu-request
+    name: PodGpuRequestDataSourceName
+    type: ReportDataSource
+  query: |
+    SELECT 
+      timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart| prestoTimestamp |}' AS period_start,
+      timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}' AS period_end,
+      labels['pod'] as pod, 
+      labels['node'] as node, 
+      labels['namespace'] as namespace, 
+      labels['label_field_cattle_io_projectId'] as projectid, 
+      labels['label_accelerator'] as gpu,
+      sum(amount * timeprecision) AS gpu_request_seconds
+    FROM {| dataSourceTableName .Report.Inputs.PodGpuRequestDataSourceName |}
+    WHERE timestamp  >= timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}'
+    AND timestamp < timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}' 
+    AND element_at(labels, 'pod') IS NOT NULL
+    AND element_at(labels, 'label_accelerator') IS NOT NULL
+    AND element_at(labels, 'node') IS NOT NULL
+    AND element_at(labels, 'namespace') IS NOT NULL
+    AND element_at(labels, 'label_field_cattle_io_projectId') IS NOT NULL
+    GROUP BY labels['pod'],labels['label_accelerator'],labels['node'],labels['namespace'],labels['label_field_cattle_io_projectId']

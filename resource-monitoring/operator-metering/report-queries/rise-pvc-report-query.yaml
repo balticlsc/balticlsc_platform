@@ -1,0 +1,48 @@
+apiVersion: metering.openshift.io/v1
+kind: ReportQuery
+metadata:
+  name: rise-pvc
+  labels:
+    operator-metering: "true"
+spec:
+  columns:
+  - name: period_start
+    type: timestamp
+    unit: date
+  - name: period_end
+    type: timestamp
+    unit: date
+  - name: persistentvolumeclaim
+    type: varchar
+  - name: volumename
+    type: varchar
+  - name: namespace
+    type: varchar
+    unit: kubernetes_namespace
+  - name: storageclass
+    type: varchar
+  - name: projectid
+    type: varchar
+  - name: pvc_request_gib_seconds
+    type: double
+  - name: pvc_usage_gib_seconds
+    type: double
+  inputs:
+  - name: ReportingStart
+    type: time
+  - name: ReportingEnd
+    type: time
+  - name: PvcRequestReport
+    type: Report
+    default: rise-pvc-request-hourly
+  - name: PvcUsageReport
+    type: Report
+    default: rise-pvc-usage-hourly
+  query: |
+    SELECT
+      *
+    FROM {| reportTableName .Report.Inputs.PvcRequestReport |}
+    LEFT JOIN {| reportTableName .Report.Inputs.PvcUsageReport |}
+    USING (period_start,period_end,persistentvolumeclaim,volumename,namespace,storageclass,projectid)
+    WHERE period_start  >= timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}'
+    AND period_start < timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}' 

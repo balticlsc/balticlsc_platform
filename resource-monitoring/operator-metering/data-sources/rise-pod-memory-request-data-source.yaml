@@ -1,0 +1,8 @@
+apiVersion: metering.openshift.io/v1
+kind: ReportDataSource
+metadata:
+  name: rise-pod-memory-request
+spec:
+  prometheusMetricsImporter:
+    query: |
+      sum(kube_pod_container_resource_requests_memory_bytes) by (pod, namespace, node) + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0

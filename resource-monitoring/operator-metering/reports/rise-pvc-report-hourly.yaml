@@ -1,0 +1,11 @@
+apiVersion: metering.openshift.io/v1
+kind: Report
+metadata:
+  name: rise-pvc-hourly
+spec:
+  query: "rise-pvc"
+  reportingStart: "2020-06-24T00:00:00Z"
+  schedule:
+    period: "hourly"
+    hourly:
+      minute: 0

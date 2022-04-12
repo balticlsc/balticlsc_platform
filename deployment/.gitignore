@@ -1,0 +1,11 @@
+clusterid
+apitoken
+projectid
+userid
+node_cmd_controlplane.sh
+node_cmd_controlplane_worker.sh
+node_cmd_etcd.sh
+node_cmd_etcd_controlplane.sh
+node_cmd_etcd_controlplane_worker.sh
+node_cmd_etcd_worker.sh
+node_cmd_worker.sh

@@ -1,0 +1,58 @@
+all:
+  hosts: 
+    rancher:
+      ansible_host: 109.225.89.161
+      ansible_user: ubuntu 
+      ansible_port: 33979
+      ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+  children:
+      kubernetes_nodes:
+        hosts:
+          node1:
+            ansible_host: 109.225.89.161
+            ansible_user: ubuntu 
+            ansible_port: 33993 
+            ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+            etcd: false
+            controlplane: false 
+            worker: true
+          node2:
+            ansible_host: 109.225.89.161
+            ansible_user: ubuntu 
+            ansible_port: 33984 
+            ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+            etcd: false
+            controlplane: false
+            worker: true
+          node3:
+            ansible_host: 109.225.89.161
+            ansible_user: ubuntu
+            ansible_port: 33995
+            ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+            etcd: false
+            controlplane: false
+            worker: true 
+          node4:
+            ansible_host: 109.225.89.161
+            ansible_user: ubuntu
+            ansible_port: 33963
+            ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+            etcd: true
+            controlplane: true 
+            worker: false
+          node5:
+            ansible_host: 109.225.89.161
+            ansible_user: ubuntu
+            ansible_port: 33964
+            ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+            etcd: true
+            controlplane: true 
+            worker: false
+          node6:
+            ansible_host: 109.225.89.161
+            ansible_user: ubuntu
+            ansible_port: 33987
+            ansible_ssh_private_key_file: /Users/johan/.ssh/ecc.pem
+            etcd: true
+            controlplane: true 
+            worker: false 

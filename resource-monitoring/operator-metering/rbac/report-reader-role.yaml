@@ -1,0 +1,9 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: report-reader
+  namespace: metering
+rules:
+- apiGroups: ["metering.openshift.io"] # "" indicates the core API group
+  resources: ["reports", "reports/p-5bs8m-pod-gpu-request-hourly"]
+  verbs: ["get", "watch"]

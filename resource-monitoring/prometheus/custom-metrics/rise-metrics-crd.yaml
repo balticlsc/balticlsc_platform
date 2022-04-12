@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: exporter-kubernetes
+    chart: exporter-kubernetes-0.0.1
+    heritage: Tiller
+    io.cattle.field/appId: cluster-monitoring
+    release: cluster-monitoring
+    source: rancher-monitoring
+  name: rise-metrics
+  namespace: cattle-prometheus
+spec:
+  groups:
+  - name: rise.rules
+    rules:
+    - expr: sum(kube_pod_container_resource_requests_cpu_cores{node!=""}) by (pod, namespace,
+        node) + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels)
+        by (namespace, label_field_cattle_io_projectId) * 0
+      record: rise_pod_cpu_request
+    - expr: sum(rate(container_cpu_usage_seconds_total{container_name!="POD",container_name!="",pod!=""}[5m])) BY (pod, namespace, node) + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0
+      record: rise_pod_cpu_usage
+    - expr: sum(kube_pod_container_resource_requests{resource=~".*gpu", container!="",container!="POD", node!=""}) by (pod, resource, node, namespace) + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0 + on(node) group_left (label_accelerator) max(kube_node_labels) by (node, label_accelerator) * 0
+      record: rise_pod_gpu_request
+    - expr: sum(kube_pod_container_resource_requests_memory_bytes{node!=""}) by (pod, namespace, node) + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0
+      record: rise_pod_memory_request
+    - expr: sum(container_memory_usage_bytes{container!="POD", container!="",pod!=""}) by (pod, namespace, node) + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0
+      record: rise_pod_memory_usage
+    - expr: max(kube_persistentvolumeclaim_resource_requests_storage_bytes) by (namespace, persistentvolumeclaim) + on (namespace, persistentvolumeclaim) group_left(storageclass, volumename) sum(kube_persistentvolumeclaim_info{volumename!=""}) by (namespace, persistentvolumeclaim, storageclass, volumename) * 0+ on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0
+      record: rise_pvc_request
+    - expr: max(label_replace(max(kubelet_volume_stats_used_bytes) by (exported_namespace, persistentvolumeclaim), "namespace", "$1", "exported_namespace", "(.+)")) by (namespace, persistentvolumeclaim) + on (namespace, persistentvolumeclaim) group_left(storageclass, volumename) sum(kube_persistentvolumeclaim_info) by (namespace, persistentvolumeclaim, storageclass, volumename) * 0 + on (namespace) group_left (label_field_cattle_io_projectId) max(kube_namespace_labels) by (namespace, label_field_cattle_io_projectId) * 0
+      record: rise_pvc_usage

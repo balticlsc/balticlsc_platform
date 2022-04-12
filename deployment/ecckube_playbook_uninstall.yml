@@ -1,0 +1,25 @@
+---
+- hosts: all 
+  gather_facts: true 
+  become_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: Stop all Docker Containers
+      shell: docker stop $(docker ps -a -q)
+      ignore_errors: yes
+    - name: Remove all Docker Containers
+      shell: docker rm $(docker ps -a -q)
+      ignore_errors: yes
+    - name: Remove all Docker Images 
+      shell: docker rmi $(docker images -q)
+      ignore_errors: yes
+    - name: Remove all Docker Volumes 
+      shell: docker volume rm $(docker volume ls -qf dangling=true)
+      ignore_errors: yes
+    - name: Remove Kubernetes files 
+      shell: rm -rf /etc/kubernetes
+      ignore_errors: yes
+    - name: Cleanup 
+      script: ./cleanup.sh
+      ignore_errors: yes

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: daniel-job124
+  annotations:
+    field.cattle.io/containerDefaultResourceLimit: '{"limitsCpu":"500m","limitsMemory":"256Mi","requestsCpu":"500m","requestsMemory":"256Mi"}'
+    field.cattle.io/resourceQuota: '{"limit":{"requestsCpu":"100000m","requestsMemory":"1024Mi","requestsStorage":"1Gi","limitsCpu":"1000m","limitsMemory":"1024Mi"}}'
+    field.cattle.io/projectId: c-hvhqv:p-pslln

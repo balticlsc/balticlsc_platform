@@ -1,0 +1,14 @@
+apiVersion: metering.openshift.io/v1
+kind: Report
+metadata:
+  name: rise-by-project-pvc-monthly
+spec:
+  query: "rise-by-project-pvc"
+  reportingStart: "2020-06-24T00:00:00Z"
+  schedule:
+    period: "monthly"
+    monthly:
+      dayOfMonth: 1
+      hour: 0
+      minute: 0
+      second: 0

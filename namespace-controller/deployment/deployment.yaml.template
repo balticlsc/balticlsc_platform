@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8snsctrl-server
+  labels:
+    app: k8snsctrl-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8snsctrl-server
+  template:
+    metadata:
+      labels:
+        app: k8snsctrl-server
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1234
+      containers:
+      - name: server
+        env:
+        - name: RANCHER_URL
+          value: https://daniel-matebook:4443
+        - name: RANCHER_TOKEN
+          value: token-rss8d:h5g9lptk6cnhnkcp4sskpl2x84hc45p2lnmnv2rtpgf5zh86jcj8bc
+        - name: RANCHER_CLUSTER_ID
+          value: c-hvhqv
+        image: danielxolsson/k8snsctrl:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8443
+          name: k8snsctrl-api
+        volumeMounts:
+        - name: k8snsctrl-tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+      volumes:
+      - name: k8snsctrl-tls-certs
+        secret:
+          secretName: k8snsctrl-server-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8snsctrl-server
+spec:
+  selector:
+    app: k8snsctrl-server
+  ports:
+    - port: 443
+      targetPort: k8snsctrl-api
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: k8snsctrl-webhook
+webhooks:
+  - name: k8snsctrl-server.k8snsctrl-webhook.svc
+    clientConfig:
+      service:
+        name: k8snsctrl-server
+        namespace: ${NAMESPACE}
+        path: "/mutate"
+      caBundle: ${CA_PEM_B64}
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: 
+        - namespaces
+        - pods
+        - deployments
+        - replicationcontroller
+        - replicasets
+        - statefulsets
+        - daemonsets
+        - jobs

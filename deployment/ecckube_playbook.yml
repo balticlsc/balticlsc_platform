@@ -1,0 +1,89 @@
+---
+- hosts: all 
+  gather_facts: true 
+  become_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: Updates repository cache
+      action: apt update_cache=true
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+    - name: Install Pip
+      apt: 
+        name: python3-pip
+        state: present
+    - name: Install docker-py package
+      pip: 
+        name: docker-py
+- hosts: rancher
+  become_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: Start Rancher 
+      docker_container:
+        name: rancher
+        image: rancher/rancher:latest 
+        ports:
+          - "80:80"
+          - "443:443"
+        state: started
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Configure Rancher 
+      become: no 
+      local_action: command ./setup_rancher.sh 
+    - name: Create cluster 
+      become: no 
+      local_action: command ./create_cluster.sh 
+    - name: Create user 
+      become: no 
+      local_action: command ./create_user.sh 
+    - name: Create custom policy 
+      become: no 
+      local_action: command ./create_custom_policy.sh 
+- hosts: kubernetes_nodes 
+  become_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+     - name: Setup up Kubernetes node with role etcd
+       script: ./node_cmd_etcd.sh
+       when: etcd and not controlplane and not worker
+     - name: Setup up Kubernetes node with role controlplane
+       script: ./node_cmd_controlplane.sh
+       when: not etcd and controlplane and not worker
+     - name: Setup up Kubernetes node with role worker
+       script: ./node_cmd_worker.sh
+       when: not etcd and not controlplane and worker
+     - name: Setup up Kubernetes node with roles etcd and controlplane 
+       script: ./node_cmd_etcd_controlplane.sh
+       when: etcd and controlplane and not worker
+     - name: Setup up Kubernetes node with roles etcd and worker
+       script: ./node_cmd_etcd_worker.sh
+       when: etcd and not controlplane and worker
+     - name: Setup up Kubernetes node with roles controlplane and worker
+       script: ./node_cmd_controlplane_worker.sh
+       when: not etcd and controlplane and worker
+     - name: Setup up Kubernetes node with roles etcd controlplane and worker
+       script: ./node_cmd_etcd_controlplane_worker.sh
+       when: etcd and controlplane and worker 
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Wait for cluster 
+      become: no 
+      local_action: command ./wait_for_cluster.sh
+    - name: Create project 
+      become: no 
+      local_action: command ./create_project.sh
+    - name: Add project member 
+      become: no 
+      local_action: command ./add_project_member.sh
+    - name: Add cluster member 
+      become: no 
+      local_action: command ./add_cluster_member.sh

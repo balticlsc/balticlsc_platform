@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package BalticProtoServices;
+
+import "google/protobuf/empty.proto";
+option csharp_namespace = "Baltic.Types.Protos";
+option go_package = "./clusterproxy";
+
+service ClusterProxy {
+	rpc PrepareWorkspace(XWorkspace) returns (ClusterStatusResponse) {}
+	rpc CheckWorkspaceStatus(BatchId) returns (ClusterStatusResponse) {}
+	rpc PurgeWorkspace(BatchId) returns (ClusterStatusResponse) {}
+	rpc RunBalticModule(XBalticModuleBuild) returns (ClusterStatusResponse) {}
+	rpc CheckBalticModuleStatus(Module) returns (ClusterStatusResponse) {}
+	rpc DisposeBalticModule(Module) returns (ClusterStatusResponse) {}
+	rpc GetClusterDescription(google.protobuf.Empty) returns (XClusterDescription) {}
+}
+
+// ===== Simple messages =====
+
+message BatchId {
+	string Id = 1;
+}
+
+message Module {
+	string BatchId = 1;
+	string ModuleId = 2;
+}
+
+message ClusterStatusResponse {
+	enum StatusCode {
+		ACTIVE = 0;
+		PENDING = 1;
+		ERROR = 2;
+		NOT_FOUND = 3;
+	}
+	StatusCode Status = 1;
+	string Message = 2;    // Forward for instance extra ERROR info here
+}
+
+message XWorkspace {
+	string BatchId = 1;
+	XWorkspaceQuota Quota = 2;
+}
+
+message XWorkspaceQuota {
+	int32 Cpus = 1;        // mCPUs
+	int32 Memory = 2;      // Mi,
+	int32 Storage = 3;     // Gi
+	int32 Gpus = 4;        // Number of GPUs of any type
+}
+
+// ===== BalticModuleBuild =====
+
+message XBalticModuleBuild {
+	string BatchId = 1;     // Unique id of batch (must be provided)
+	string ModuleId = 2;    // Unique id within batch (must be provided)
+	string Image = 3;				// name of container image on docker hub (must be provided)
+	repeated XEnvironmentVariable EnvironmentVariables = 4; 	// (could be null)
+	string Command = 5;			// Change default entry command for docker container (could be null)
+	repeated string CommandArguments = 6; 			// Arguments for docker entry command (could be null)
+	repeated XPortMapping PortMappings = 7;			// (could be null)
+	repeated XVolumeDescription Volumes = 8;		// (could be null)
+	XResourceRequest Resources = 9;							// (must be provided)
+	repeated XConfigFileDescription ConfigFiles = 10; 		// (could be null)
+	enum NetworkScope {
+		WORKSPACE = 0;
+		CLUSTER = 1;
+		PUBLIC = 2;
+	}
+	NetworkScope Scope = 11; 
+}
+
+message XEnvironmentVariable {
+	string Key = 1;
+	string Value = 2;
+}
+
+message XPortMapping {
+	uint32 ContainerPort = 1;
+	uint32 PublishedPort = 2;
+	enum CommProtocol {
+		TCP = 0;
+		UDP = 1;
+	}
+	CommProtocol Protocol = 3;
+}
+
+message XVolumeDescription {
+	int32 Size = 1;       // Gi
+	string StorageClass = 2;
+	string MountPath = 3;
+}
+
+message XResourceRequest {
+	int32 Cpus = 1;        // mCPUs
+	int32 Memory = 2;      // MiB
+	XGpuRequest Gpus = 3;
+}
+
+message XGpuRequest {
+	string Type = 1;      // ex: nvidia-gtx-2080ti
+	int32 Quantity = 2;   // number of gpus
+}
+
+message XConfigFileDescription {
+	string Data = 1;      // json, yaml...
+	string MountPath = 2;
+}
+
+// ===== ClusterDescription =====
+
+message XClusterDescription {
+	string ClusterId = 1;          // Rancher ClusterID
+	string ProjectId = 2;          // Rancher ProjectID
+	string ProjectName = 3;        // Rancher ProjectName
+	repeated XClusterNode Nodes = 4;
+	enum ClusterStatus {
+		ONLINE = 0;
+		UNREACHABLE = 1;
+	}
+	ClusterStatus Status = 5;
+	XResourceQuota Limit = 6;
+	XResourceQuota UsedLimit = 7;
+}
+
+message XClusterNode {
+	string Name = 1;
+	string Os = 2;                 // linux
+	string OsImage = 3;            // Ubuntu 18.04.5 LTS
+	string Architecture = 4;       // amd64
+	string KernelVersion = 5;      // linux kernel version
+	string OrchestratorType = 6;   // BalticLSC Platform / Docker swarm
+	string OrchestratorVersion = 7;
+	string GpuType = 8;            // gpu type (ex nvidia-gtx-2080ti or "")
+	XCapacity Capacity = 9;         // Total capacity of node
+	XCapacity Allocatable = 10;     // Available capacity of node
+	bool Unschedulable = 11;       // True if not accepting workloads
+	enum NodeStatus {
+		READY = 0;
+		DISK_PRESSURE = 1;
+		MEMORY_PRESSURE = 2;
+		PID_PRESSURE = 3;
+		NETWORK_UNAVAILABLE = 4;
+	}
+	NodeStatus Status = 12;
+}
+
+message XCapacity {
+	int32 Cpus = 1;                // num cpu cores
+	int32 EphemeralStorage = 2;    // Ki
+	int32 Memory = 3;              // Ki
+	int32 Gpus = 4;
+	int32 Pods = 5;
+}
+
+message XResourceQuota {
+	int32 CpuRequest = 1;          // mCPUs
+	int32 CpuLimit = 2;            // mCPUs
+	int32 MemoryRequest = 3;       // MiB
+	int32 MemoryLimit = 4;         // MiB
+	int32 PersistentVolumeClaims = 5;
+	uint32 StorageRequest = 6;     // GB
+	int32 GpuRequest = 7;          // Num GPUs (-1 unlimited)
+}
